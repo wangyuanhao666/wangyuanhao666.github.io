@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI内容净化器 | 未来科技</title>
+    <style>
+        :root {
+            --primary: #00f0ff;
+            --secondary: #7b2dff;
+            --bg-dark: #0a0a12;
+            --bg-darker: #050508;
+            --text: #e0e0ff;
+            --text-dim: #a0a0c0;
+            --text-highlight: #ffffff;
+            --card-bg: rgba(20, 20, 40, 0.7);
+            --border: rgba(100, 100, 150, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(123, 45, 255, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 80% 70%, rgba(0, 240, 255, 0.15) 0%, transparent 30%);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+        
+        .subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .tool-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .text-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .text-box:hover {
+            border-color: rgba(100, 100, 150, 0.5);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .text-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            background: rgba(10, 10, 20, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text);
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: none;
+            transition: all 0.3s ease;
+            white-space: pre-wrap;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(10, 10, 20, 0.8);
+            box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+        
+        #output-text {
+            background: rgba(15, 15, 25, 0.7);
+            line-height: 1.8;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--bg-darker);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            position: relative;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 240, 255, 0.4);
+        }
+        
+        button.secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        button.secondary:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+        
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-darker);
+            color: var(--text-highlight);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        
+        [data-tooltip]:hover::after {
+            opacity: 1;
+        }
+        
+        .icon {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        .feature-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 240, 255, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .feature-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-highlight);
+        }
+        
+        .feature-desc {
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            padding: 1rem;
+        }
+        
+        .history-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: var(--bg-darker);
+            padding: 1.5rem;
+            transition: right 0.3s ease;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        
+        .history-panel.show {
+            right: 0;
+        }
+        
+        .history-item {
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            background: rgba(100, 100, 150, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background: rgba(100, 100, 150, 0.4);
+        }
+        
+        .history-time {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.3rem;
+        }
+        
+        .history-content {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .export-options {
+            display: none;
+            position: absolute;
+            bottom: -180px;
+            left: 0;
+            width: 200px;
+            background: var(--card-bg);
+            padding: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            border: 1px solid var(--border);
+        }
+        
+        .export-options.show {
+            display: block;
+        }
+        
+        .export-option {
+            padding: 0.5rem 1rem;
+            margin: 0.3rem 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .export-option:hover {
+            background: rgba(0, 240, 255, 0.1);
+        }
+        
+        .skeleton {
+            display: none;
+            background: rgba(20, 20, 40, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .skeleton-line {
+            height: 1rem;
+            background: linear-gradient(90deg, rgba(100, 100, 150, 0.2), rgba(100, 100, 150, 0.4), rgba(100, 100, 150, 0.2));
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .skeleton-line:last-child {
+            width: 80%;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .tool-container {
+                gap: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+                justify-content: center;
+                margin-bottom: 0.5rem;
+            }
+            
+            .history-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .export-options {
+                width: 100%;
+                bottom: -180px;
+            }
+        }
+        
+        .tech-circle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .circle-1 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.1) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+        }
+        
+        .circle-2 {
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(123, 45, 255, 0.1) 0%, transparent 70%);
+            bottom: -50px;
+            right: -50px;
+        }
+        
+        .grid-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(100, 100, 150, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(100, 100, 150, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -2;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 240, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .status-message {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1001;
+            display: none;
+            max-width: 80%;
+            text-align: center;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-pattern"></div>
+    <div class="tech-circle circle-1"></div>
+    <div class="tech-circle circle-2"></div>
+    
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在处理...</div>
+    </div>
+    
+    <div class="status-message" id="statusMessage"></div>
+    
+    <div id="skeleton-loading" class="skeleton">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+    </div>
+    
+    <div class="history-panel" id="historyPanel">
+        <h3 style="margin-bottom: 1rem;">历史记录</h3>
+        <div id="historyList"></div>
+        <button id="clearHistory" style="margin-top: 1rem; width: 100%;" class="secondary">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+            清空历史
+        </button>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>AI内容净化器</h1>
+            <p class="subtitle">一键清除大模型生成内容中的多余符号（*、-、#等），保留原始格式。</p>
+        </header>
+        
+        <div class="tool-container">
+            <div class="text-box">
+                <div class="text-box-header">
+                    <h3>原始内容</h3>
+                    <span>粘贴AI生成的内容</span>
+                </div>
+                <textarea id="input-text" placeholder="🖊️ 粘贴AI生成内容，例如：*你好* 或 -这是一个示例-"></textarea>
+                <div class="button-group">
+                    <button id="paste-btn" data-tooltip="粘贴剪贴板内容">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                        </svg>
+                        粘贴
+                    </button>
+                    <button id="clear-input" class="secondary" data-tooltip="清空输入框">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        清空
+                    </button>
+                </div>
+            </div>
+            
+            <div class="text-box">
+                <div class="text-box-header">
+                    <h3>净化后内容</h3>
+                    <span>仅去除特殊符号，保留原始格式</span>
+                </div>
+                <textarea id="output-text" placeholder="净化后的内容将显示在这里..." readonly></textarea>
+                <div class="button-group">
+                    <button id="clean-btn" data-tooltip="清除特殊符号">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        净化文本
+                    </button>
+                    <button id="copy-btn" class="secondary" data-tooltip="复制到剪贴板">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                        </svg>
+                        复制
+                    </button>
+                    <div style="position: relative;">
+                        <button id="export-btn" class="secondary" data-tooltip="导出为其他格式">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            导出
+                        </button>
+                        <div class="export-options" id="exportOptions">
+                            <div class="export-option" data-type="png">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                PNG图片
+                            </div>
+                            <div class="export-option" data-type="markdown">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Markdown
+                            </div>
+                            <div class="export-option" data-type="word">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Word文档
+                            </div>
+                        </div>
+                    </div>
+                    <button id="history-btn" class="secondary" data-tooltip="查看历史记录">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        历史
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">智能净化</h3>
+                <p class="feature-desc">自动识别并移除AI生成内容中的多余符号，如星号(*)、破折号(-)、井号(#)等，保留原始格式。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <h3 class="feature-title">一键复制</h3>
+                <p class="feature-desc">净化后的内容可一键复制到剪贴板，方便您直接粘贴到任何地方使用，无需手动选择文本。</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🖼️</div>
+                <h3 class="feature-title">多格式导出</h3>
+                <p class="feature-desc">支持将内容导出为PNG、Markdown和Word格式，满足不同场景需求。</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>© 2025 AI内容净化器 | 未来科技工具 | WYH</p>
+    </footer>
+    
+    <!-- 引入必要的库 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputText = document.getElementById('input-text');
+            const outputText = document.getElementById('output-text');
+            const pasteBtn = document.getElementById('paste-btn');
+            const cleanBtn = document.getElementById('clean-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const historyBtn = document.getElementById('history-btn');
+            const clearInput = document.getElementById('clear-input');
+            const loading = document.getElementById('loading');
+            const historyPanel = document.getElementById('historyPanel');
+            const historyList = document.getElementById('historyList');
+            const clearHistory = document.getElementById('clearHistory');
+            const exportOptions = document.getElementById('exportOptions');
+            const statusMessage = document.getElementById('statusMessage');
+            const skeletonLoading = document.getElementById('skeleton-loading');
+            
+            // 初始化历史记录
+            let history = JSON.parse(localStorage.getItem('history')) || [];
+            renderHistory();
+            
+            // 自动调整输入框高度
+            inputText.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // 粘贴按钮功能
+            pasteBtn.addEventListener('click', async () => {
+                try {
+                    const text = await navigator.clipboard.readText();
+                    inputText.value = text;
+                    inputText.dispatchEvent(new Event('input'));
+                } catch (err) {
+                    showError('无法访问剪贴板，请手动粘贴内容。');
+                }
+            });
+            
+            // 清空输入
+            clearInput.addEventListener('click', () => {
+                inputText.value = '';
+                outputText.value = '';
+                inputText.style.height = 'auto';
+            });
+            
+            // 净化文本
+            cleanBtn.addEventListener('click', () => {
+                let text = inputText.value;
+                if (!text.trim()) {
+                    showError('请输入要净化的内容');
+                    return;
+                }
+                
+                showLoading('正在净化文本...');
+                
+                // 模拟处理延迟（实际使用时可以移除）
+                setTimeout(() => {
+                    // 1. 移除行首的短横线（-）
+                    text = text.replace(/^\s*-\s*/gm, '');
+                    
+                    // 2. 移除段落之间的短横线（--）
+                    text = text.replace(/\n\s*--\s*\n/g, '\n\n');
+                    
+                    // 3. 移除其他特殊符号
+                    text = text.replace(/\*\*/g, '');
+                    text = text.replace(/\*/g, '');
+                    text = text.replace(/#{1,6}\s*/g, '');
+                    text = text.replace(/`{1,3}/g, '');
+                    text = text.replace(/~~/g, '');
+                    text = text.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+                    text = text.replace(/^\s*[-=*_]{3,}\s*$/gm, '');
+                    
+                    outputText.value = text;
+                    
+                    // 保存到历史记录
+                    saveToHistory(text);
+                    hideLoading();
+                    showStatus('净化完成！', true);
+                }, 500);
+            });
+            
+            // 保存到历史记录
+            function saveToHistory(text) {
+                const historyItem = {
+                    text: text,
+                    time: new Date().toLocaleString()
+                };
+                
+                history.unshift(historyItem);
+                if (history.length > 20) {
+                    history.pop();
+                }
+                
+                localStorage.setItem('history', JSON.stringify(history));
+                renderHistory();
+            }
+            
+            // 渲染历史记录
+            function renderHistory() {
+                historyList.innerHTML = '';
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p style="color: var(--text-dim); text-align: center;">暂无历史记录</p>';
+                    return;
+                }
+                
+                history.forEach((item, index) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <div class="history-time">${item.time}</div>
+                        <div class="history-content">${item.text.substring(0, 100)}${item.text.length > 100 ? '...' : ''}</div>
+                    `;
+                    
+                    historyItem.addEventListener('click', () => {
+                        outputText.value = item.text;
+                        historyPanel.classList.remove('show');
+                    });
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+            
+            // 清空历史记录
+            clearHistory.addEventListener('click', () => {
+                if (confirm('确定要清空所有历史记录吗？')) {
+                    history = [];
+                    localStorage.setItem('history', JSON.stringify(history));
+                    renderHistory();
+                }
+            });
+            
+            // 显示/隐藏历史记录面板
+            historyBtn.addEventListener('click', () => {
+                historyPanel.classList.toggle('show');
+                exportOptions.classList.remove('show');
+            });
+            
+            // 显示/隐藏导出选项
+            exportBtn.addEventListener('click', (e) => {
+                exportOptions.classList.toggle('show');
+                historyPanel.classList.remove('show');
+                e.stopPropagation();
+            });
+            
+            // 点击其他地方关闭导出选项
+            document.addEventListener('click', () => {
+                exportOptions.classList.remove('show');
+            });
+            
+            // 导出选项点击事件
+            document.querySelectorAll('.export-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const type = option.getAttribute('data-type');
+                    exportContent(type);
+                    exportOptions.classList.remove('show');
+                });
+            });
+            
+            // 导出内容
+            function exportContent(type) {
+                if (!outputText.value) {
+                    showError('没有可导出的内容，请先净化文本。');
+                    return;
+                }
+                
+                switch (type) {
+                    case 'png':
+                        exportAsImage();
+                        break;
+                    case 'markdown':
+                        exportAsMarkdown();
+                        break;
+                    case 'word':
+                        exportAsWord();
+                        break;
+                }
+            }
+            
+            // 导出为图片
+            async function exportAsImage() {
+                try {
+                    showLoading('正在生成图片...');
+                    showSkeleton();
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.width = '800px';
+                    tempDiv.style.padding = '40px';
+                    tempDiv.style.borderRadius = '12px';
+                    tempDiv.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.5)';
+                    tempDiv.style.color = '#333';
+                    tempDiv.style.fontFamily = "'PingFang SC', 'Microsoft YaHei', sans-serif";
+                    tempDiv.style.lineHeight = '1.8';
+                    tempDiv.style.fontSize = '18px';
+                    tempDiv.style.whiteSpace = 'pre-wrap';
+                    tempDiv.style.background = 'linear-gradient(135deg, rgba(200, 255, 200, 0.6), rgba(180, 230, 180, 0.6))';
+                    
+                    tempDiv.textContent = outputText.value;
+                    document.body.appendChild(tempDiv);
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    const canvas = await html2canvas(tempDiv, {
+                        backgroundColor: null,
+                        scale: 2,
+                        logging: false,
+                        useCORS: true
+                    });
+                    
+                    document.body.removeChild(tempDiv);
+                    
+                    canvas.toBlob((blob) => {
+                        saveAs(blob, '净化内容.png');
+                        showStatus('图片已生成！', true);
+                    }, 'image/png');
+                    
+                } catch (error) {
+                    showError('生成图片失败: ' + error.message);
+                } finally {
+                    hideLoading();
+                    hideSkeleton();
+                }
+            }
+            
+            // 导出为Markdown
+            function exportAsMarkdown() {
+                try {
+                    const blob = new Blob([outputText.value], { type: 'text/markdown' });
+                    saveAs(blob, '净化内容.md');
+                    showStatus('Markdown已导出！', true);
+                } catch (error) {
+                    showError('Markdown导出失败: ' + error.message);
+                }
+            }
+            
+            // 导出为Word
+            function exportAsWord() {
+                try {
+                    showLoading('正在生成Word文档...');
+                    
+                    const html = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <style>
+                                body { 
+                                    font-family: 'Microsoft YaHei', sans-serif; 
+                                    line-height: 1.6; 
+                                    white-space: pre-wrap;
+                                    padding: 20px;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <h1>AI内容净化结果</h1>
+                            <div>${outputText.value.replace(/\n/g, '<br>')}</div>
+                        </body>
+                        </html>
+                    `;
+                    
+                    const blob = new Blob([html], { type: 'application/msword' });
+                    saveAs(blob, '净化内容.doc');
+                    showStatus('Word文档已生成！', true);
+                    
+                } catch (error) {
+                    showError('Word导出失败: ' + error.message);
+                } finally {
+                    hideLoading();
+                }
+            }
+            
+            // 复制文本
+            copyBtn.addEventListener('click', () => {
+                if (!outputText.value) {
+                    alert('没有可复制的内容，请先净化文本。');
+                    return;
+                }
+                
+                navigator.clipboard.writeText(outputText.value)
+                    .then(() => {
+                        showCopySuccess();
+                    })
+                    .catch(err => {
+                        showError('复制失败，请手动选择文本复制。');
+                    });
+            });
+            
+            // 显示复制成功效果
+            function showCopySuccess() {
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = `
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    已复制
+                `;
+                copyBtn.style.backgroundColor = '#4CAF50';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.backgroundColor = '';
+                }, 2000);
+            }
+            
+            // 显示加载中
+            function showLoading(text) {
+                loading.style.display = 'flex';
+                updateLoadingText(text || '正在处理...');
+            }
+            
+            // 隐藏加载中
+            function hideLoading() {
+                loading.style.display = 'none';
+            }
+            
+            // 更新加载文本
+            function updateLoadingText(text) {
+                const loadingText = document.querySelector('.loading-text');
+                if (loadingText) {
+                    loadingText.textContent = text;
+                }
+            }
+            
+            // 显示骨架屏
+            function showSkeleton() {
+                skeletonLoading.style.display = 'block';
+            }
+            
+            // 隐藏骨架屏
+            function hideSkeleton() {
+                skeletonLoading.style.display = 'none';
+            }
+            
+            // 显示状态消息
+            function showStatus(message, isSuccess = false) {
+                if (!statusMessage) return;
+                
+                statusMessage.textContent = message;
+                statusMessage.style.display = 'block';
+                statusMessage.style.backgroundColor = isSuccess ? '#4CAF50' : 
+                                                 message.includes('失败') ? '#F44336' : '#2196F3';
+                
+                if (isSuccess || message.includes('失败')) {
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            // 显示错误信息
+            function showError(message) {
+                showStatus(message, false);
+                console.error(message);
+            }
+        });
+    </script>
+</body>
+</html>
